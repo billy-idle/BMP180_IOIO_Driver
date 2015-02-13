@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/BMP180.iml" filepath="$PROJECT_DIR$/BMP180.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../IOIO API/IOIOLib/target/pc/IOIOLibPC.iml" filepath="$PROJECT_DIR$/../IOIO API/IOIOLib/target/pc/IOIOLibPC.iml" />
+    </modules>
+  </component>
+</project>
