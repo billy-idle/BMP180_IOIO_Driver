@@ -1,7 +1,7 @@
 package com.starla.driver;
 
 /**
- * Created by asus on 12/2/2015.
+ * Created by guillesupremacy on 12/2/2015.
  */
 import ioio.lib.api.TwiMaster;
 import ioio.lib.api.exception.ConnectionLostException;
@@ -77,7 +77,7 @@ public class BMP180 {
         int MB = getIntCoefficient(MB_REG_ADDRESS);
         int MC = getIntCoefficient(MC_REG_ADDRESS);
         int MD = getIntCoefficient(MD_REG_ADDRESS);
-
+        /*
 		System.out.println("AC1 = " + AC1);
 		System.out.println("AC2 = " + AC2);
 		System.out.println("AC3 = " + AC3);
@@ -89,7 +89,7 @@ public class BMP180 {
 		System.out.println("MB = " + MB);
 		System.out.println("MC = " + MC);
 		System.out.println("MD = " + MD);
-
+		*/
         // Compute floating-point polynomials:
         c3 = 160.0 * Math.pow(2, -15) * AC3;
         c4 = Math.pow(10, -3) * Math.pow(2, -15) * AC4;
@@ -107,7 +107,7 @@ public class BMP180 {
         p0 = (3791.0 - 8.0) / 1600.0;
         p1 = 1.0 - 7357.0 * Math.pow(2, -20);
         p2 = 3038.0 * 100.0 * Math.pow(2, -36);
-
+		/*
 		System.out.println("");
 		System.out.println("c3 = " + c3);
 		System.out.println("c4 = " + c4);
@@ -125,21 +125,23 @@ public class BMP180 {
 		System.out.println("p0 = " + p0);
 		System.out.println("p1 = " + p1);
 		System.out.println("p2 = " + p2);
-
+		*/
     }
 
     int startTemperature() throws ConnectionLostException, InterruptedException {
-        if (writeBytes(new byte[]{(byte) BMP180_REG_CONTROL, (byte) BMP180_COMMAND_TEMPERATURE})) {
-            return 5; // delay
+        int delay = 5;
+        if(writeBytes(new byte[]{(byte) BMP180_REG_CONTROL, (byte) BMP180_COMMAND_TEMPERATURE})){ //write 0x2E int reg 0xF4
+            return delay;
         }
         return 0;
     }
 
-    public double getTemperature() throws InterruptedException, ConnectionLostException {
+    public double getTemperature() throws ConnectionLostException, InterruptedException {
         double tu, a, t;
-
         Thread.sleep(startTemperature());
-        byte[] response = readBytes(new byte[]{(byte) BMP180_REG_RESULT}, 2);
+
+        byte[] response = readBytes(new byte[]{(byte) BMP180_REG_RESULT, (byte) 0xF7}); // read reg 0xF6 (MSB), 0xF7 (LSB)
+
         tu = ((int) response[0] * 256) + (int) response[1];
         a = c5 * (tu - c6);
         t = a + (mc / (a + md));
@@ -148,14 +150,14 @@ public class BMP180 {
     }
 
     int startPressure(Oversampling oversampling) throws ConnectionLostException, InterruptedException {
-        int delay;
         byte[] request = new byte[2];
         request[0] = (byte) BMP180_REG_CONTROL;
+        int delay;
 
         switch (oversampling) {
             case VERY_LOW_RES:
                 request[1] = BMP180_COMMAND_PRESSURE_0;
-                delay = 5;
+                delay = 5; // delay
                 break;
             case LOW_RES:
                 request[1] = BMP180_COMMAND_PRESSURE_1;
@@ -175,24 +177,25 @@ public class BMP180 {
                 break;
         }
 
-        if(writeBytes(request)){
+        if(writeBytes(request)){ // write BMP180_COMMAND_PRESSURE_X into reg 0xF4
             return delay;
         }
+
         return 0;
     }
 
     public double getPressure(double temperature, Oversampling oversampling) throws ConnectionLostException, InterruptedException {
         double pu, s, x, y, z, pressure;
         Thread.sleep(startPressure(oversampling)); // delay
-        byte[] response = readBytes(new byte[]{(byte) BMP180_REG_RESULT}, 3);
 
-        pu = (response[0] * 256.0) + response[1] + (response[2] / 256.0);
+        byte[] response = readBytes(new byte[]{(byte) BMP180_REG_RESULT, (byte) 0xF7, (byte) 0xF8});
+
+        pu = Byte.toUnsignedInt(response[0])*256.0 + Byte.toUnsignedInt(response[1]) + Byte.toUnsignedInt(response[2])/256.0;
         s = temperature - 25.0;
-        x = (x2 * Math.pow(s, 2)) + (x1 * s) + x0;
-        y = (y2 * Math.pow(s, 2)) + (y1 * s) + y0;
-        z = (pu - x) / y;
-        pressure = (p2 * Math.pow(z, 2)) + (p1 * z) + p0;
-
+        x = x2*Math.pow(s, 2) + x1*s + x0;
+        y = y2*Math.pow(s, 2) + y1*s + y0;
+        z = (pu-x) / y;
+        pressure = p2* Math.pow(z, 2) + p1*z + p0;
 
         return pressure;
     }
@@ -214,19 +217,21 @@ public class BMP180 {
     }
 
     int getIntCoefficient(byte[] request) throws ConnectionLostException, InterruptedException {
-        byte[] response = new byte[2]; //response[0](msb), response[1](lsb)
+        byte[] msb = new byte[1];
+        byte[] lsb = new byte[1];
 
-        if (twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, request, request.length, response, response.length)){
-            return (((int) response[0] << 8) + (int) response[1]);
+        if (twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, new byte[]{request[0]}, 1, msb, 1) && twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, new byte[]{request[1]}, 1, lsb, 1)) {
+            return (((int) msb[0] << 8) + (int) lsb[0]);
         }
         return 0;
     }
 
     int getUIntCoefficient(byte[] request) throws ConnectionLostException, InterruptedException {
-        byte[] response = new byte[2]; //response[0](msb), response[1](lsb)
+        byte[] msb = new byte[1];
+        byte[] lsb = new byte[1];
 
-        if (twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, request, request.length, response, response.length)) {
-            return ((Byte.toUnsignedInt(response[0]) << 8) + Byte.toUnsignedInt(response[1]));
+        if (twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, new byte[]{request[0]}, 1, msb, 1) && twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, new byte[]{request[1]}, 1, lsb, 1)) {
+            return ((Byte.toUnsignedInt(msb[0]) << 8) + Byte.toUnsignedInt(lsb[0]));
         }
         return 0;
     }
@@ -235,17 +240,16 @@ public class BMP180 {
         return twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, request, request.length, null, 0);
     }
 
-    byte[] readBytes(byte[] request, int length) throws ConnectionLostException, InterruptedException {
-        byte[] response = new byte[length];
-        byte[] responseUnsigned = new byte[length];
+    byte[] readBytes(byte[] request) throws ConnectionLostException, InterruptedException {
+        byte[] singleResponse = new byte[1];
+        byte[] totalResponse = new byte[request.length];
 
-        if (twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, request, request.length, response, response.length)) {
-            for(int i=0; i<response.length; i++){
-                responseUnsigned[i] = (byte) Math.abs(response[i]);
+        for (int i = 0; i < request.length; i++) {
+            if (twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, new byte[]{request[i]}, 1, singleResponse, 1)) { // because i'm reading, i must send the request one reg at a time.
+                totalResponse[i] = (byte) Byte.toUnsignedInt(singleResponse[0]);
             }
-            return responseUnsigned;
         }
-        return null;
+        return totalResponse;
     }
 
     public double mbToAtm(double pressure) {
@@ -256,4 +260,3 @@ public class BMP180 {
         VERY_LOW_RES, LOW_RES, MEDIUM_RES, HIGH_RES
     }
 }
-
