@@ -1,17 +1,16 @@
 package com.starla.driver;
 
-/**
- * Created by guillesupremacy on 12/2/2015.
- */
-
 import ioio.lib.api.TwiMaster;
 import ioio.lib.api.exception.ConnectionLostException;
 
 /**
  * This class is based on SFE_BMP180 library for arduino, designed by Mike Grusin, SparkFun Electronics.
+ * <p>
+ * <a href="http://www.didacticaselectronicas.com/index.php?page=shop.product_details&flypage=flypage.tpl&product_id=
+ * 2156&category_id=43&keyword=bmp180&option=com_virtuemart&Itemid=133">BMP180 Sensor</a>
  *
- * @version 1, 7/03/14
  * @author Guillermo Guzm&aacute;n S&aacute;nchez
+ * @version 2, 28/04/15
  */
 public final class BMP180 {
     private static final int BMP180_ADDRESS = 0x77; // 7-bit address
@@ -50,10 +49,12 @@ public final class BMP180 {
     private double p2;
 
     /**
+     * Class constructor.
      *
-     * @param twi
+     * @param twi TwiMaster object.
      * @throws ConnectionLostException
      * @throws InterruptedException
+     * @see TwiMaster
      */
     public BMP180(TwiMaster twi) throws ConnectionLostException, InterruptedException {
         this.twi = twi;
@@ -65,13 +66,12 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @return return true if the sensor was correctly initialized.
      * @throws ConnectionLostException
      * @throws InterruptedException
      */
     private boolean begin() throws ConnectionLostException, InterruptedException {
-        if(readInt(AC1_REG_ADDRESS) &&
+        if (readInt(AC1_REG_ADDRESS) &&
                 readInt(AC2_REG_ADDRESS) &&
                 readInt(AC3_REG_ADDRESS) &&
                 readUInt(AC4_REG_ADDRESS) &&
@@ -89,7 +89,6 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @throws ConnectionLostException
      * @throws InterruptedException
      */
@@ -109,7 +108,7 @@ public final class BMP180 {
         int MD = getIntCoefficient(MD_REG_ADDRESS);
 
         /*
-		System.out.println("AC1 = " + AC1);
+        System.out.println("AC1 = " + AC1);
 		System.out.println("AC2 = " + AC2);
 		System.out.println("AC3 = " + AC3);
 		System.out.println("AC4 = " + AC4);
@@ -123,25 +122,25 @@ public final class BMP180 {
 		*/
 
         // Compute floating-point polynomials:
-        c3 = 160.0 * Math.pow(2,-15) * AC3;
-        c4 = Math.pow(10,-3) * Math.pow(2,-15) * AC4;
-        b1 = Math.pow(160,2) * Math.pow(2,-30) * VB1;
-        c5 = (Math.pow(2,-15) / 160) * AC5;
+        c3 = 160.0 * Math.pow(2, -15) * AC3;
+        c4 = Math.pow(10, -3) * Math.pow(2, -15) * AC4;
+        b1 = Math.pow(160, 2) * Math.pow(2, -30) * VB1;
+        c5 = (Math.pow(2, -15) / 160) * AC5;
         c6 = AC6;
-        mc = (Math.pow(2,11) / Math.pow(160,2)) * MC;
+        mc = (Math.pow(2, 11) / Math.pow(160, 2)) * MC;
         md = MD / 160.0;
         x0 = AC1;
-        x1 = 160.0 * Math.pow(2,-13) * AC2;
-        x2 = Math.pow(160,2) * Math.pow(2,-25) * VB2;
-        y0 = c4 * Math.pow(2,15);
+        x1 = 160.0 * Math.pow(2, -13) * AC2;
+        x2 = Math.pow(160, 2) * Math.pow(2, -25) * VB2;
+        y0 = c4 * Math.pow(2, 15);
         y1 = c4 * c3;
         y2 = c4 * b1;
-        p0 = (3791.0-8.0) / 1600.0;
-        p1 = 1.0 - 7357.0 * Math.pow(2,-20);
-        p2 = 3038.0 * 100.0 * Math.pow(2,-36);
+        p0 = (3791.0 - 8.0) / 1600.0;
+        p1 = 1.0 - 7357.0 * Math.pow(2, -20);
+        p2 = 3038.0 * 100.0 * Math.pow(2, -36);
 
 		/*
-		System.out.println("");
+        System.out.println("");
 		System.out.println("c3 = " + c3);
 		System.out.println("c4 = " + c4);
 		System.out.println("c5 = " + c5);
@@ -162,20 +161,18 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @return Returns the amount of milliseconds to wait.
      * @throws ConnectionLostException
      * @throws InterruptedException
      */
     private int startTemperature() throws ConnectionLostException, InterruptedException {
-        if(writeBytes(new byte[]{(byte) BMP180_REG_CONTROL, (byte) BMP180_COMMAND_TEMPERATURE})){ //write 0x2E int reg 0xF4
+        if (writeBytes(new byte[]{(byte) BMP180_REG_CONTROL, (byte) BMP180_COMMAND_TEMPERATURE})) { //write 0x2E int reg 0xF4
             return 5;
         }
         return 0;
     }
 
     /**
-     *
      * @return Returns the temperature measurement from previous startTemperature method.
      * @throws ConnectionLostException
      * @throws InterruptedException
@@ -183,20 +180,19 @@ public final class BMP180 {
     public double getTemperature() throws ConnectionLostException, InterruptedException {
         double tu, a, t;
         int delay = startTemperature();
-        assert  delay > 0 : "start temperature measure fail";
+        assert delay > 0 : "start temperature measure fail";
         Thread.sleep(delay);
 
         byte[] response = readBytes(new byte[]{(byte) BMP180_REG_RESULT, (byte) 0xF7}); // read reg 0xF6 (MSB), 0xF7 (LSB)
 
         tu = ((int) response[0] * 256) + (int) response[1];
-        a = c5 * (tu-c6);
-        t = a + mc/(a+md);
+        a = c5 * (tu - c6);
+        t = a + mc / (a + md);
 
         return t;
     }
 
     /**
-     *
      * @param oversampling
      * @return Returns the amount of milliseconds to wait.
      * @throws ConnectionLostException
@@ -230,7 +226,7 @@ public final class BMP180 {
                 break;
         }
 
-        if(writeBytes(request)){ // write BMP180_COMMAND_PRESSURE_X into reg 0xF4
+        if (writeBytes(request)) { // write BMP180_COMMAND_PRESSURE_X into reg 0xF4
             return delay;
         }
 
@@ -238,8 +234,7 @@ public final class BMP180 {
     }
 
     /**
-     *
-     * @param temperature
+     * @param temperature  temperature in Celsius degrees.
      * @param oversampling
      * @return Returns the absolute pressure measurement from previous startPressure method.
      * @throws ConnectionLostException
@@ -253,12 +248,12 @@ public final class BMP180 {
 
         byte[] response = readBytes(new byte[]{(byte) BMP180_REG_RESULT, (byte) 0xF7, (byte) 0xF8});
 
-        pu = Byte.toUnsignedInt(response[0])*256.0 + Byte.toUnsignedInt(response[1]) + Byte.toUnsignedInt(response[2])/256.0;
+        pu = Byte.toUnsignedInt(response[0]) * 256.0 + Byte.toUnsignedInt(response[1]) + Byte.toUnsignedInt(response[2]) / 256.0;
         s = temperature - 25.0;
-        x = x2*Math.pow(s,2) + x1*s + x0;
-        y = y2*Math.pow(s,2) + y1*s + y0;
-        z = (pu-x)/y;
-        pressure = p2*Math.pow(z,2) + p1*z + p0;
+        x = x2 * Math.pow(s, 2) + x1 * s + x0;
+        y = y2 * Math.pow(s, 2) + y1 * s + y0;
+        z = (pu - x) / y;
+        pressure = p2 * Math.pow(z, 2) + p1 * z + p0;
 
         return pressure;
     }
@@ -266,19 +261,19 @@ public final class BMP180 {
     /**
      * Converts the absolute pressure to sea-level pressure (as used in weather data)
      *
-     * @param pressure
-     * @param altitude
+     * @param pressure Pressure in mb.
+     * @param altitude Altitude in meters.
      * @return Returns sea-level pressure in millibar.
      */
     public double seaLevel(double pressure, double altitude) {
-        return (pressure/Math.pow(1 - altitude/44330.0,5.255));
+        return (pressure / Math.pow(1 - altitude / 44330.0, 5.255));
     }
 
     /**
      * Converts the absolute pressure to altitude (given baseline pressure; sea-level, runway, etc.)
      *
-     * @param pressure
-     * @param pressureAtABaseline
+     * @param pressure            Pressure in mb.
+     * @param pressureAtABaseline Sea-Level pressure in mb.
      * @return Returns signed altitude in meters.
      */
     public double altitude(double pressure, double pressureAtABaseline) {
@@ -286,7 +281,6 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @param request The register that has to be read.
      * @return Returns true if the read was success.
      * @throws ConnectionLostException
@@ -297,18 +291,16 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @param request The register that has to be read.
      * @return Returns true if the reading was successful.
      * @throws ConnectionLostException
      * @throws InterruptedException
      */
-    boolean readUInt(byte[] request) throws ConnectionLostException, InterruptedException {
+    private boolean readUInt(byte[] request) throws ConnectionLostException, InterruptedException {
         return twi.writeRead(BMP180_ADDRESS, SEVEN_BIT_ADDRESS, request, request.length, null, 0);
     }
 
     /**
-     *
      * @param request The register that has to be read.
      * @return returns the coefficient stored in the register.
      * @throws ConnectionLostException
@@ -325,7 +317,6 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @param request The register that has to be read.
      * @return returns the coefficient stored in the register.
      * @throws ConnectionLostException
@@ -354,7 +345,6 @@ public final class BMP180 {
     }
 
     /**
-     *
      * @param request
      * @return Returns the bytes that were requested.
      * @throws ConnectionLostException
@@ -375,11 +365,11 @@ public final class BMP180 {
     /**
      * Converts from millibars to atmospheres.
      *
-     * @param pressure
+     * @param pressure Pressure in mb.
      * @return Returns the pressure's measurement in atm.
      */
     public double mbToAtm(double pressure) {
-        return pressure*0.000986923267;
+        return pressure * 0.000986923267;
     }
 
     /**

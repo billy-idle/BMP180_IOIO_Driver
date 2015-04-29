@@ -1,7 +1,8 @@
 package com.starla.test;
 
 /**
- * Created by guillesupremacy on 12/2/2015.
+ * @author Guillermo Guzm&aacute;n S&aacute;nchez
+ * @version 2, 28/04/15
  */
 
 import com.starla.driver.BMP180;
@@ -37,7 +38,8 @@ public final class WeatherStation extends IOIOConsoleApp {
 
     @Override
     protected void run(String[] args) throws IOException {
-        while (true) {}
+        while (true) {
+        }
     }
 
     @Override
@@ -60,7 +62,7 @@ public final class WeatherStation extends IOIOConsoleApp {
                 temperature = bmp180.getTemperature();
                 pressure = bmp180.getPressure(temperature, BMP180.Oversampling.HIGH_RES);
                 seaLevelPressure = bmp180.seaLevel(pressure, ALTITUDE);
-                computedAltitude = bmp180.altitude(pressure,seaLevelPressure);
+                computedAltitude = bmp180.altitude(pressure, seaLevelPressure);
 
                 System.out.print(Math.round(temperature * 100.0) / 100.0 + "\t\t");
                 System.out.print(Math.round(bmp180.mbToAtm(seaLevelPressure) * 100.0) / 100.0 + "\t\t\t");

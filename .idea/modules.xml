@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/BMP180.iml" filepath="$PROJECT_DIR$/BMP180.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../IOIO API/IOIOLib/target/pc/IOIOLibPC.iml" filepath="$PROJECT_DIR$/../IOIO API/IOIOLib/target/pc/IOIOLibPC.iml" />
+      <module fileurl="file://$PROJECT_DIR$/App-IOIO0504/IOIOLib/target/pc/IOIOLibPC.iml" filepath="$PROJECT_DIR$/App-IOIO0504/IOIOLib/target/pc/IOIOLibPC.iml" />
     </modules>
   </component>
 </project>

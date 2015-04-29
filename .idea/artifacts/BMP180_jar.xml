@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="BMP180:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/BMP180_jar</output-path>
+    <root id="archive" name="BMP180.jar">
+      <element id="module-output" name="BMP180" />
+      <element id="module-output" name="IOIOLibPC" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/App-IOIO0504/IOIOLib/target/pc/lib/jna-4.0.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/App-IOIO0504/IOIOLib/target/pc/lib/purejavacomm-0.0.21.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
